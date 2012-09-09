@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="vfsLibs/commons-vfs2-2.0.jar"/>
 	<classpathentry kind="lib" path="vfsLibs/jsch-0.1.48.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/Yapbam"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/A-JLib"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
