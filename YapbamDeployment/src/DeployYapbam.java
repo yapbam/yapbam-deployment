@@ -25,8 +25,8 @@ import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 
-/** Deploys the javaluator updates on its web site.
- * <br>This class requires that the Javaluator build has been already done with success.
+/** Deploys the Yapbam updates on its web site.
+ * <br>This class requires that the Yapbam build has been already done with success.
  * <br>It verifies that all material is ready to be deployed. 
  * @author Jean-Marc-Marc Astesana
  */
