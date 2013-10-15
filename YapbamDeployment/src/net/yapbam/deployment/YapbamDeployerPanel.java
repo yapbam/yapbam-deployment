@@ -1,5 +1,6 @@
 package net.yapbam.deployment;
 import javax.swing.JPanel;
+
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.BorderLayout;
@@ -11,10 +12,14 @@ import javax.swing.JButton;
 import javax.swing.border.TitledBorder;
 
 import net.astesana.widget.LoginPanel;
+
 import javax.swing.JLabel;
+
 import java.awt.Insets;
-import net.astesana.ajlib.swing.widget.TextWidget;
+
 import javax.swing.UIManager;
+
+import com.fathzer.soft.ajlib.swing.widget.TextWidget;
 
 @SuppressWarnings("serial")
 public class YapbamDeployerPanel extends JPanel {

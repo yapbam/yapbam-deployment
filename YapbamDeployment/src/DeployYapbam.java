@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import net.yapbam.util.SecureDownloader;
+import net.yapbam.util.SecureDownloader.DownloadInfo;
 
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSelectInfo;
@@ -156,16 +157,16 @@ public class DeployYapbam {
 				SecureDownloader sd = new SecureDownloader(Proxy.NO_PROXY);
 				String zipURL = "http://www.yapbam.net/update"+release+"/yapbam-"+release+".zip";
 				out.println ("autoUpdateURL="+zipURL);
-				sd.download(new URL(zipURL), null);
-				out.println ("autoUpdateCHKSUM="+sd.getCheckSum());
-				out.println ("autoUpdateSize="+sd.getDownloadedSize());
+				DownloadInfo info = sd.download(new URL(zipURL), null);
+				out.println ("autoUpdateCHKSUM="+info.getCheckSum());
+				out.println ("autoUpdateSize="+info.getDownloadedSize());
 				out.println ();
 		
 				String updaterURL = "http://www.yapbam.net/update"+release+"/updater.jar";
 				out.println ("autoUpdateUpdaterURL="+updaterURL);
-				sd.download(new URL(updaterURL), null);
-				out.println ("autoUpdateUpdaterCHKSUM="+sd.getCheckSum());
-				out.println ("autoUpdateUpdaterSize="+sd.getDownloadedSize());
+				info = sd.download(new URL(updaterURL), null);
+				out.println ("autoUpdateUpdaterCHKSUM="+info.getCheckSum());
+				out.println ("autoUpdateUpdaterSize="+info.getDownloadedSize());
 				return file;
 			} finally {
 				out.close();

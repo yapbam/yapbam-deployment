@@ -1,7 +1,7 @@
 package net.yapbam.deployment;
 import java.awt.Container;
 
-import net.astesana.ajlib.swing.framework.Application;
+import com.fathzer.soft.ajlib.swing.framework.Application;
 
 public class YapbamDeployer extends Application {
 	private YapbamDeployerPanel panel;
@@ -46,7 +46,7 @@ public class YapbamDeployer extends Application {
 	 */
 	@Override
 	public String getName() {
-		return "Yapbam deployement";
+		return "Yapbam deployment";
 	}
 
 	/**

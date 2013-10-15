@@ -1,15 +1,17 @@
 package net.astesana.widget;
 import javax.swing.JPanel;
 import javax.swing.JLabel;
+
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
-import net.astesana.ajlib.swing.widget.PasswordWidget;
-import net.astesana.ajlib.swing.widget.TextWidget;
 import javax.swing.JCheckBox;
+
+import com.fathzer.soft.ajlib.swing.widget.PasswordWidget;
+import com.fathzer.soft.ajlib.swing.widget.TextWidget;
 
 import java.awt.event.ItemEvent;
 
