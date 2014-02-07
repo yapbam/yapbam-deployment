@@ -1,4 +1,5 @@
 package net.yapbam.deployment;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import java.awt.GridBagLayout;
@@ -16,10 +17,16 @@ import net.astesana.widget.LoginPanel;
 import javax.swing.JLabel;
 
 import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.UIManager;
 
 import com.fathzer.soft.ajlib.swing.widget.TextWidget;
+
+import javax.swing.JCheckBox;
+
+import org.apache.commons.vfs2.FileSystemException;
 
 @SuppressWarnings("serial")
 public class YapbamDeployerPanel extends JPanel {
@@ -33,6 +40,7 @@ public class YapbamDeployerPanel extends JPanel {
 	private TextWidget toRemove;
 	private JLabel lblDeploymentSourceDirectory;
 	private TextWidget srcFolder;
+	private JCheckBox betaCheckBox;
 	/**
 	 * Create the panel.
 	 */
@@ -63,6 +71,7 @@ public class YapbamDeployerPanel extends JPanel {
 			gbc_lblDeploymentSourceDirectory.gridy = 1;
 			panel.add(getLblDeploymentSourceDirectory(), gbc_lblDeploymentSourceDirectory);
 			GridBagConstraints gbc_srcFolder = new GridBagConstraints();
+			gbc_srcFolder.fill = GridBagConstraints.HORIZONTAL;
 			gbc_srcFolder.anchor = GridBagConstraints.WEST;
 			gbc_srcFolder.insets = new Insets(0, 0, 5, 0);
 			gbc_srcFolder.gridx = 1;
@@ -82,15 +91,22 @@ public class YapbamDeployerPanel extends JPanel {
 			panel.add(getToDeploy(), gbc_toDeploy);
 			GridBagConstraints gbc_lblVersionToRemove = new GridBagConstraints();
 			gbc_lblVersionToRemove.anchor = GridBagConstraints.EAST;
-			gbc_lblVersionToRemove.insets = new Insets(0, 5, 0, 5);
+			gbc_lblVersionToRemove.insets = new Insets(0, 5, 5, 5);
 			gbc_lblVersionToRemove.gridx = 0;
 			gbc_lblVersionToRemove.gridy = 3;
 			panel.add(getLblVersionToRemove(), gbc_lblVersionToRemove);
 			GridBagConstraints gbc_toRemove = new GridBagConstraints();
+			gbc_toRemove.insets = new Insets(0, 0, 5, 0);
 			gbc_toRemove.anchor = GridBagConstraints.WEST;
 			gbc_toRemove.gridx = 1;
 			gbc_toRemove.gridy = 3;
 			panel.add(getToRemove(), gbc_toRemove);
+			GridBagConstraints gbcBetaCheckBox = new GridBagConstraints();
+			gbcBetaCheckBox.anchor = GridBagConstraints.WEST;
+			gbcBetaCheckBox.insets = new Insets(0, 5, 0, 5);
+			gbcBetaCheckBox.gridx = 0;
+			gbcBetaCheckBox.gridy = 4;
+			panel.add(getBetaCheckBox(), gbcBetaCheckBox);
 		}
 		return panel;
 	}
@@ -105,6 +121,19 @@ public class YapbamDeployerPanel extends JPanel {
 	private JButton getBtnNewButton() {
 		if (btnNewButton == null) {
 			btnNewButton = new JButton("Start ...");
+			btnNewButton.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					try {
+						DeployYapbam yapbamDeployer = new DeployYapbam(getLoginPanel().getLogin().getUser(), getLoginPanel().getLogin().getPassword(), 
+								getSrcFolder().getText().trim(), getToDeploy().getText(), getToRemove().getText(), getBetaCheckBox().isSelected());
+						yapbamDeployer.doIt();
+					} catch (FileSystemException e1) {
+						e1.printStackTrace();
+						JOptionPane.showMessageDialog(btnNewButton, "An error occurred", "Error", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			});
 		}
 		return btnNewButton;
 	}
@@ -169,6 +198,13 @@ public class YapbamDeployerPanel extends JPanel {
 		return srcFolder;
 	}
 
+	private JCheckBox getBetaCheckBox() {
+		if (betaCheckBox == null) {
+			betaCheckBox = new JCheckBox("Beta");
+		}
+		return betaCheckBox;
+	}
+
 	public void saveState() {
 		Preferences prefs = getPreferences();
 		prefs.put("user", getLogin().getUser());
@@ -176,6 +212,7 @@ public class YapbamDeployerPanel extends JPanel {
 		prefs.put("srcFolder", getSrcFolder().getText());
 		prefs.put("version", getToDeploy().getText());
 		prefs.put("toRemove", getToRemove().getText());
+		prefs.putBoolean("beta", getBetaCheckBox().isSelected());
 	}
 	
 	public void restoreState() {
@@ -184,5 +221,6 @@ public class YapbamDeployerPanel extends JPanel {
 		getSrcFolder().setText(prefs.get("srcFolder", ""));
 		getToDeploy().setText(prefs.get("version", ""));
 		getToRemove().setText(prefs.get("toRemove", ""));
+		getBetaCheckBox().setSelected(prefs.getBoolean("beta", false));
 	}
 }
