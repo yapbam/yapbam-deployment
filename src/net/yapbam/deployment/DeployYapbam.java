@@ -1,3 +1,4 @@
+package net.yapbam.deployment;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -34,13 +35,15 @@ import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 public class DeployYapbam {
 	private static final String RELEASE_ROOT = "sftp://web.sourceforge.net/home/pfs/project/yapbam";
 	private static final String WEB_ROOT = "sftp://web.sourceforge.net/home/project-web/yapbam/htdocs";
+	private boolean onlyBeta; 
 	private DefaultFileSystemManager fsManager;
 	private FileSystemOptions opts;
 	private SrcDescription src;
 	private FileSelector dummySelector;
 	
-	private DeployYapbam(String user, String password, String srcPath, String newVersion, String oldVersion) throws FileSystemException {
+	DeployYapbam(String user, String password, String srcPath, String newVersion, String oldVersion, boolean onlyBeta) throws FileSystemException {
 		this.src = new SrcDescription(new File(srcPath), newVersion, new Date(), oldVersion);
+		this.onlyBeta = onlyBeta;
 		fsManager = (DefaultFileSystemManager) VFS.getManager();
 		opts = new FileSystemOptions();
 		SftpFileSystemConfigBuilder.getInstance().setStrictHostKeyChecking(opts, "no");
@@ -62,22 +65,22 @@ public class DeployYapbam {
 	/**
 	 * @param args user, password, srcFolder
 	 */
-	public static void main(String[] args) {
-		if (args.length!=5) {
-			System.err.println("Invalid number of arguments");
-			System.out.println("usage: java "+DeployYapbam.class.getName()+" user password srcFolder versionNumber, oldVersionNumber");
-			System.exit(-1);
-		}
-		try {
-			DeployYapbam deploy = new DeployYapbam(args[0], args[1], args[2], args[3], args[4]);
-			deploy.test();
-			deploy.doIt();
-		} catch (FileSystemException e) {
-			System.err.println("An exception occurred");
-			e.printStackTrace();
-			System.exit(-1);
-		}
-	}
+//	public static void main(String[] args) {
+//		if (args.length!=5) {
+//			System.err.println("Invalid number of arguments");
+//			System.out.println("usage: java "+DeployYapbam.class.getName()+" user password srcFolder versionNumber, oldVersionNumber");
+//			System.exit(-1);
+//		}
+//		try {
+//			DeployYapbam deploy = new DeployYapbam(args[0], args[1], args[2], args[3], args[4]);
+//			deploy.test();
+//			deploy.doIt();
+//		} catch (FileSystemException e) {
+//			System.err.println("An exception occurred");
+//			e.printStackTrace();
+//			System.exit(-1);
+//		}
+//	}
 
 	protected void test() {
 		//TODO
@@ -86,9 +89,11 @@ public class DeployYapbam {
 	protected void doIt() throws FileSystemException {
 		boolean trace = true;
 		doAutoUpdate(trace);
-		doRelease(trace);
-		doDoc(trace);
-		doPad(trace);
+		if (!onlyBeta) {
+			doRelease(trace);
+			doDoc(trace);
+			doPad(trace);
+		}
 		System.out.println ("Finished :-)");
 	}
 	
@@ -188,7 +193,10 @@ public class DeployYapbam {
 		
 		if (trace) System.out.println ("  updating auto-update info ...");
 		File file = buildUpdateInfo();
-		fsManager.resolveFile(WEB_ROOT+"/updateInfoInclude.txt", opts).copyFrom(fsManager.toFileObject(file), getDummySelector());
+		if (!onlyBeta) {
+			fsManager.resolveFile(WEB_ROOT+"/updateInfoInclude.txt", opts).copyFrom(fsManager.toFileObject(file), getDummySelector());
+		}
+		fsManager.resolveFile(WEB_ROOT+"/updateInfoBetaInclude.txt", opts).copyFrom(fsManager.toFileObject(file), getDummySelector());
 		
 		// Delete old update (if it exists)
 		FileObject oldUpdateFolder = fsManager.resolveFile(WEB_ROOT+"/update"+this.src.getOldVersion(), opts);
