@@ -160,14 +160,14 @@ public class DeployYapbam {
 				out.println ("updateURL=http://sourceforge.net/project/platformdownload.php?group_id=276272");
 				out.println ();
 				SecureDownloader sd = new SecureDownloader(Proxy.NO_PROXY);
-				String zipURL = "http://www.yapbam.net/update"+release+"/yapbam-"+release+".zip";
+				String zipURL = "http://yapbam.sourceforge.net/update"+release+"/yapbam-"+release+".zip";
 				out.println ("autoUpdateURL="+zipURL);
 				DownloadInfo info = sd.download(new URL(zipURL), null);
 				out.println ("autoUpdateCHKSUM="+info.getCheckSum());
 				out.println ("autoUpdateSize="+info.getDownloadedSize());
 				out.println ();
 		
-				String updaterURL = "http://www.yapbam.net/update"+release+"/updater.jar";
+				String updaterURL = "http://yapbam.sourceforge.net/update"+release+"/updater.jar";
 				out.println ("autoUpdateUpdaterURL="+updaterURL);
 				info = sd.download(new URL(updaterURL), null);
 				out.println ("autoUpdateUpdaterCHKSUM="+info.getCheckSum());
