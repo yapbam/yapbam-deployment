@@ -7,6 +7,7 @@ import java.awt.GridBagConstraints;
 import java.awt.BorderLayout;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.IOException;
 import java.util.prefs.Preferences;
 
 import javax.swing.JButton;
@@ -128,7 +129,7 @@ public class YapbamDeployerPanel extends JPanel {
 						DeployYapbam yapbamDeployer = new DeployYapbam(getLoginPanel().getLogin().getUser(), getLoginPanel().getLogin().getPassword(), 
 								getSrcFolder().getText().trim(), getToDeploy().getText(), getToRemove().getText(), getBetaCheckBox().isSelected());
 						yapbamDeployer.doIt();
-					} catch (FileSystemException e1) {
+					} catch (IOException e1) {
 						e1.printStackTrace();
 						JOptionPane.showMessageDialog(btnNewButton, "An error occurred", "Error", JOptionPane.ERROR_MESSAGE);
 					}

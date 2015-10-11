@@ -3,15 +3,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.Proxy;
 import java.net.URL;
-import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Scanner;
 
 import net.yapbam.util.SecureDownloader;
 import net.yapbam.util.SecureDownloader.DownloadInfo;
@@ -86,7 +87,7 @@ public class DeployYapbam {
 		//TODO
 	}
 
-	protected void doIt() throws FileSystemException {
+	protected void doIt() throws IOException {
 		boolean trace = true;
 		doAutoUpdate(trace);
 		if (!onlyBeta) {
@@ -150,13 +151,11 @@ public class DeployYapbam {
 	private File buildUpdateInfo() throws FileSystemException {
 		try {
 			String release = this.src.getNewVersion();
-			DateFormat format = new SimpleDateFormat("dd/MM/yyyy");
-			String date = format.format(new Date());
 			File file = File.createTempFile("updateInfoInclude", System.currentTimeMillis()+".txt");
 			file.deleteOnExit();
 			PrintStream out = new PrintStream(file);
 			try {
-				out.println ("lastestRelease="+release+" ("+date+")");
+				out.println ("lastestRelease="+getVersion(src.getZipFile().getAbsolutePath()));
 				out.println ("updateURL=http://sourceforge.net/project/platformdownload.php?group_id=276272");
 				out.println ();
 				SecureDownloader sd = new SecureDownloader(Proxy.NO_PROXY);
@@ -180,10 +179,22 @@ public class DeployYapbam {
 			throw new FileSystemException(e);
 		}
 	}
+	
+	private String getVersion(String zipPath) throws IOException {
+		String fname = "jar:zip:file://"+zipPath+"!/App/program.jar!/net/yapbam/update/version.txt";
+		InputStream in = fsManager.resolveFile(fname).getContent().getInputStream();
+		try {
+		    Scanner s = new java.util.Scanner(in).useDelimiter("^.+=");
+		    return s.next();
+		} finally {
+			in.close();
+		}
+	}
+
 
 	private void doAutoUpdate(boolean trace) throws FileSystemException {
 		System.out.println ("Setting up auto update");
-		if (trace) System.out.println ("  Create update folder in http://www.yapbam.net/ ...");
+		if (trace) System.out.println ("  Create update folder in http://yapbam.sourceforge.net/ ...");
 		String updateFolder = WEB_ROOT+"/update"+this.src.getNewVersion();
 		fsManager.resolveFile(updateFolder, opts).createFolder();
 		if (trace) System.out.println ("  Copying zip to update folder ...");
@@ -201,7 +212,7 @@ public class DeployYapbam {
 		// Delete old update (if it exists)
 		FileObject oldUpdateFolder = fsManager.resolveFile(WEB_ROOT+"/update"+this.src.getOldVersion(), opts);
 		if (oldUpdateFolder.exists()) {
-			if (trace) System.out.println ("  Delete obsolete update folder in http://www.yapbam.net/ ...");
+			if (trace) System.out.println ("  Delete obsolete update folder in http://yapbam.sourceforge.net/ ...");
 			oldUpdateFolder.delete(getDummySelector());
 		}
 	}
@@ -212,7 +223,7 @@ public class DeployYapbam {
 		fsManager.resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getZipFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getZipFile()), getDummySelector());
 		if (trace) System.out.println ("  Copying exe to sourceforge ...");
 		fsManager.resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getExeFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getExeFile()), getDummySelector());
-		if (trace) System.out.println ("  Copying exe to http://www.yapbam.net/directDownload ...");
+		if (trace) System.out.println ("  Copying exe to http://yapbam.sourceforge.net/directDownload ...");
 		fsManager.resolveFile(WEB_ROOT+"/directDownload/"+this.src.getExeFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getExeFile()), getDummySelector());
 	}
 
