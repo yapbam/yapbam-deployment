@@ -156,17 +156,17 @@ public class DeployYapbam {
 			PrintStream out = new PrintStream(file);
 			try {
 				out.println ("lastestRelease="+getVersion(src.getZipFile().getAbsolutePath()));
-				out.println ("updateURL=http://sourceforge.net/project/platformdownload.php?group_id=276272");
+				out.println ("updateURL=https://sourceforge.net/project/platformdownload.php?group_id=276272");
 				out.println ();
 				SecureDownloader sd = new SecureDownloader(Proxy.NO_PROXY);
-				String zipURL = "http://yapbam.sourceforge.net/update"+release+"/yapbam-"+release+".zip";
+				String zipURL = "https://yapbam.sourceforge.net/update"+release+"/yapbam-"+release+".zip";
 				out.println ("autoUpdateURL="+zipURL);
 				DownloadInfo info = sd.download(new URL(zipURL), null);
 				out.println ("autoUpdateCHKSUM="+info.getCheckSum());
 				out.println ("autoUpdateSize="+info.getDownloadedSize());
 				out.println ();
 		
-				String updaterURL = "http://yapbam.sourceforge.net/update"+release+"/updater.jar";
+				String updaterURL = "https://yapbam.sourceforge.net/update"+release+"/updater.jar";
 				out.println ("autoUpdateUpdaterURL="+updaterURL);
 				info = sd.download(new URL(updaterURL), null);
 				out.println ("autoUpdateUpdaterCHKSUM="+info.getCheckSum());
@@ -194,7 +194,7 @@ public class DeployYapbam {
 
 	private void doAutoUpdate(boolean trace) throws FileSystemException {
 		System.out.println ("Setting up auto update");
-		if (trace) System.out.println ("  Create update folder in http://yapbam.sourceforge.net/ ...");
+		if (trace) System.out.println ("  Create update folder in https://yapbam.sourceforge.net/ ...");
 		String updateFolder = WEB_ROOT+"/update"+this.src.getNewVersion();
 		fsManager.resolveFile(updateFolder, opts).createFolder();
 		if (trace) System.out.println ("  Copying zip to update folder ...");
@@ -212,7 +212,7 @@ public class DeployYapbam {
 		// Delete old update (if it exists)
 		FileObject oldUpdateFolder = fsManager.resolveFile(WEB_ROOT+"/update"+this.src.getOldVersion(), opts);
 		if (oldUpdateFolder.exists()) {
-			if (trace) System.out.println ("  Delete obsolete update folder in http://yapbam.sourceforge.net/ ...");
+			if (trace) System.out.println ("  Delete obsolete update folder in https://yapbam.sourceforge.net/ ...");
 			oldUpdateFolder.delete(getDummySelector());
 		}
 	}
@@ -223,7 +223,7 @@ public class DeployYapbam {
 		fsManager.resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getZipFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getZipFile()), getDummySelector());
 		if (trace) System.out.println ("  Copying exe to sourceforge ...");
 		fsManager.resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getExeFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getExeFile()), getDummySelector());
-		if (trace) System.out.println ("  Copying exe to http://yapbam.sourceforge.net/directDownload ...");
+		if (trace) System.out.println ("  Copying exe to https://yapbam.sourceforge.net/directDownload ...");
 		fsManager.resolveFile(WEB_ROOT+"/directDownload/"+this.src.getExeFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getExeFile()), getDummySelector());
 	}
 
