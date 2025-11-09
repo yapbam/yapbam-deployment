@@ -27,8 +27,6 @@ import com.fathzer.soft.ajlib.swing.widget.TextWidget;
 
 import javax.swing.JCheckBox;
 
-import org.apache.commons.vfs2.FileSystemException;
-
 @SuppressWarnings("serial")
 public class YapbamDeployerPanel extends JPanel {
 	private JPanel panel;

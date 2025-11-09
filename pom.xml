@@ -29,11 +29,28 @@
 	</properties>
 
 	<dependencies>
-		<dependency>
+		<!--dependency>
 			<groupId>com.fathzer</groupId>
 			<artifactId>jdeployer</artifactId>
 			<version>1.1.1</version>
+		</dependency-->
+		<!-- The following dependencies can be replaced with the jdeployer dependency if it becomes publicly available -->
+		<dependency>
+			<groupId>com.fathzer</groupId>
+			<artifactId>ajlib</artifactId>
+			<version>0.3.16</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-vfs2</artifactId>
+			<version>2.9.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.55</version>
+		</dependency>
+		<!-- End of dependencies that can be replaced with the jdeployer dependency -->
 		<dependency>
 			<groupId>com.fathzer</groupId>
 			<artifactId>yapbam-commons</artifactId>
@@ -48,8 +65,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 		</plugins>
