@@ -28,9 +28,12 @@ import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 
+import com.jcraft.jsch.UIKeyboardInteractive;
+import com.jcraft.jsch.UserInfo;
+
 /** Deploys the Yapbam updates on its web site.
  * <br>This class requires that the Yapbam build has been already done with success.
- * <br>It verifies that all material is ready to be deployed. 
+ * <br>It verifies that all material is ready to be deployed.
  * @author Jean-Marc-Marc Astesana
  */
 public class DeployYapbam {
@@ -51,6 +54,62 @@ public class DeployYapbam {
 		SftpFileSystemConfigBuilder.getInstance().setUserDirIsRoot(opts, false); // Use absolute paths
 		StaticUserAuthenticator auth = new StaticUserAuthenticator(null, user, password);
 		DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts, auth);
+		// SourceForge's SSH server requires keyboard-interactive authentication.
+		// JSch needs a UserInfo to answer the keyboard-interactive prompts, otherwise
+		// it fails with "Auth cancel" before ever trying the plain password method.
+		SftpFileSystemConfigBuilder.getInstance().setUserInfo(opts, new PasswordUserInfo(password));
+	}
+
+	/** A simple UserInfo that provides the password for keyboard-interactive authentication. */
+	private static final class PasswordUserInfo implements UserInfo, UIKeyboardInteractive {
+		private final String password;
+
+		PasswordUserInfo(String password) {
+			this.password = password;
+		}
+
+		@Override
+		public String getPassphrase() {
+			return null;
+		}
+
+		@Override
+		public String getPassword() {
+			return password;
+		}
+
+		@Override
+		public boolean promptPassword(String message) {
+			return true;
+		}
+
+		@Override
+		public boolean promptPassphrase(String message) {
+			return false;
+		}
+
+		@Override
+		public boolean promptYesNo(String message) {
+			return true;
+		}
+
+		@Override
+		public void showMessage(String message) {
+			// Do nothing
+		}
+
+		@Override
+		public String[] promptKeyboardInteractive(String destination, String name, String instruction, String[] prompt, boolean[] echo) {
+			// SourceForge sends a single password prompt; answer it with the configured password.
+			if (prompt == null || prompt.length == 0) {
+				return new String[0];
+			}
+			String[] responses = new String[prompt.length];
+			for (int i = 0; i < prompt.length; i++) {
+				responses[i] = password;
+			}
+			return responses;
+		}
 	}
 	
 	/* (non-Javadoc)
