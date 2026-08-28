@@ -11,8 +11,7 @@ public class SrcDescription {
 	private String newVersion;
 	private String oldVersion;
 	private Date releaseDate;
-	private File frenchPad;
-	private File englishPad;
+	private File padFile;
 
 	public SrcDescription(File folder, String newVersion, Date releaseDate, String oldVersion) {
 		this.updaterFile = new File (folder, "updater.jar");
@@ -20,8 +19,7 @@ public class SrcDescription {
 		this.exeFile = new File (folder, "yapbam-"+newVersion+".exe");
 		this.relNotesFile = new File (folder, "src/localization/relnotes.txt");
 		this.relNotesFrFile = new File (folder, "src/localization/fr/relnotes.txt");
-		this.frenchPad = new File ("pad_file.xml");
-		this.englishPad = new File ("pad_file_en.xml");
+		this.padFile = new File ("pad_file.xml");
 		this.newVersion = newVersion;
 		this.oldVersion = oldVersion;
 		this.releaseDate = releaseDate;
@@ -81,16 +79,9 @@ public class SrcDescription {
 	}
 
 	/**
-	 * @return the frenchPad
+	 * @return the padFile
 	 */
-	public File getFrenchPad() {
-		return frenchPad;
-	}
-
-	/**
-	 * @return the englishPad
-	 */
-	public File getEnglishPad() {
-		return englishPad;
+	public File getPadFile() {
+		return padFile;
 	}
 }

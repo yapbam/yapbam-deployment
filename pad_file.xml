@@ -44,12 +44,12 @@
 		<Program_Type>Freeware</Program_Type>
 		<Program_Release_Status>New Release</Program_Release_Status>
 		<Program_Install_Support>Install Only</Program_Install_Support>
-		<Program_OS_Support>Java,Linux,Mac Other,Win7 x32,Win7 x64,WinVista,WinVista x64,WinXP,Other</Program_OS_Support>
-		<Program_Language>English,French,Portuguese</Program_Language>
+		<Program_OS_Support>Java</Program_OS_Support>
+		<Program_Language>English,French,Arabic,Dutch,German,Greek,Italian,Portuguese,Spanish,Turkish</Program_Language>
 		<Program_Change_Info />
 		<Program_Specific_Category>Business</Program_Specific_Category>
 		<Program_Category_Class>Business::Accounting &amp; Finance</Program_Category_Class>
-		<Program_System_Requirements />
+	<Program_System_Requirements>Java Runtime Environment 8 or later</Program_System_Requirements>
 		<File_Info>
 			<File_Size_Bytes>{4}</File_Size_Bytes>
 			<File_Size_K>{5}</File_Size_K>
@@ -85,11 +85,11 @@
 	</Program_Descriptions>
 	<Web_Info>
 		<Application_URLs>
-			<Application_Info_URL>http://www.yapbam.net</Application_Info_URL>
+			<Application_Info_URL>https://www.yapbam.net</Application_Info_URL>
 			<Application_Order_URL />
-			<Application_Screenshot_URL>http://www.yapbam.net/fr/screenShots/transactionsTable.png</Application_Screenshot_URL>
-			<Application_Icon_URL>http://www.yapbam.net/icon.png</Application_Icon_URL>
-			<Application_XML_File_URL>http://www.yapbam.net/pad_file.xml</Application_XML_File_URL>
+			<Application_Screenshot_URL>https://www.yapbam.net/fr/screenShots/transactionsTable.png</Application_Screenshot_URL>
+			<Application_Icon_URL>https://www.yapbam.net/favicon.ico</Application_Icon_URL>
+			<Application_XML_File_URL>https://www.yapbam.net/pad_file.xml</Application_XML_File_URL>
 		</Application_URLs>
 		<Download_URLs>
 			<Primary_Download_URL>http://sourceforge.net/projects/yapbam/files/yapbam/yapbam-{0}.exe</Primary_Download_URL>

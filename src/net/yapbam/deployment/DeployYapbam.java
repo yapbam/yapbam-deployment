@@ -158,13 +158,10 @@ public class DeployYapbam {
 	}
 	
 	private void doPad(boolean trace) throws FileSystemException {
-		System.out.println ("Updating pad files");
-		File f = buildPad(this.src.getFrenchPad());
+		System.out.println ("Updating pad file");
+		File f = buildPad(this.src.getPadFile());
 		if (trace) System.out.println ("  Uploading french pad ...");
 		fsManager.resolveFile(WEB_ROOT+"/pad_file.xml", opts).copyFrom(fsManager.toFileObject(f), getDummySelector());
-		f = buildPad(this.src.getEnglishPad());
-		if (trace) System.out.println ("  Uploading english pad ...");
-		fsManager.resolveFile(WEB_ROOT+"/pad_file_en.xml", opts).copyFrom(fsManager.toFileObject(f), getDummySelector());
 	}
 
 	private File buildPad(File template) throws FileSystemException {

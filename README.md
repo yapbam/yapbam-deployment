@@ -34,7 +34,6 @@ form with:
 | Copy release notes (en) | `WEB_ROOT/en/doc/` |
 | Copy release notes (fr) | `WEB_ROOT/fr/doc/` |
 | Upload `pad_file.xml` | `WEB_ROOT/` |
-| Upload `pad_file_en.xml` | `WEB_ROOT/` |
 | Delete old `updateOldVersion/` folder | `WEB_ROOT/updateOldVersion/` |
 
 ### Beta-only deployment (`onlyBeta = true`)
@@ -76,8 +75,9 @@ channel or the public download pages.
    SourceForge Files section and to `directDownload/`.
 3. `doDoc()` — skipped in beta mode. Copies the release notes (English and
    French).
-4. `doPad()` — skipped in beta mode. Generates and uploads the PAD files
-   (XML templates with version, date, and file size placeholders).
+4. `doPad()` — skipped in beta mode. Generates and uploads the PAD file
+   (`pad_file.xml`, an XML template with version, date, and file size
+   placeholders).
 
 The `updateInfoInclude.txt` / `updateInfoBetaInclude.txt` files are generated
 by `buildUpdateInfo()` and contain the properties read by Yapbam's
