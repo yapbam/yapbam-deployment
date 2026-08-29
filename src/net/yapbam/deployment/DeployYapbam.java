@@ -205,27 +205,25 @@ public class DeployYapbam implements AutoCloseable {
 			String release = this.src.getNewVersion();
 			File file = File.createTempFile("updateInfoInclude", System.currentTimeMillis()+".txt");
 			file.deleteOnExit();
-			PrintStream out = new PrintStream(file);
-			try {
+			try (PrintStream out = new PrintStream(file)) {
 				out.println ("lastestRelease="+getVersion(src.getZipFile().getAbsolutePath()));
 				out.println ("updateURL=https://sourceforge.net/project/platformdownload.php?group_id=276272");
 				out.println ();
 				SecureDownloader sd = new SecureDownloader(Proxy.NO_PROXY);
-				String zipURL = "https://yapbam.sourceforge.net/update"+release+"/yapbam-"+release+".zip";
+				String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+				String zipURL = "https://yapbam.sourceforge.net/update"+release+"/yapbam-"+release+".zip?timestamp="+timestamp;
 				out.println ("autoUpdateURL="+zipURL);
 				DownloadInfo info = sd.download(new URL(zipURL), null);
 				out.println ("autoUpdateCHKSUM="+info.getCheckSum());
 				out.println ("autoUpdateSize="+info.getDownloadedSize());
 				out.println ();
 		
-				String updaterURL = "https://yapbam.sourceforge.net/update"+release+"/updater.jar";
+				String updaterURL = "https://yapbam.sourceforge.net/update"+release+"/updater.jar?timestamp="+timestamp;
 				out.println ("autoUpdateUpdaterURL="+updaterURL);
 				info = sd.download(new URL(updaterURL), null);
 				out.println ("autoUpdateUpdaterCHKSUM="+info.getCheckSum());
 				out.println ("autoUpdateUpdaterSize="+info.getDownloadedSize());
 				return file;
-			} finally {
-				out.close();
 			}
 		} catch (IOException e) {
 			throw new FileSystemException(e);
@@ -249,9 +247,9 @@ public class DeployYapbam implements AutoCloseable {
 		if (trace) System.out.println ("  Create update folder in https://yapbam.sourceforge.net/ ...");
 		String updateFolder = WEB_ROOT+"/update"+this.src.getNewVersion();
 		fsManager.resolveFile(updateFolder, opts).createFolder();
-		if (trace) System.out.println ("  Copying zip to update folder ...");
+		if (trace) System.out.println ("  Copying zip ("+this.src.getZipFile()+") to update folder ...");
 		fsManager.resolveFile(updateFolder+"/"+this.src.getZipFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getZipFile()), getDummySelector());;
-		if (trace) System.out.println ("  update.jar to update folder ...");
+		if (trace) System.out.println ("  update.jar ("+this.src.getUpdaterFile()+") to update folder ...");
 		fsManager.resolveFile(updateFolder+"/"+this.src.getUpdaterFile().getName(), opts).copyFrom(fsManager.toFileObject(this.src.getUpdaterFile()), getDummySelector());
 		
 		if (trace) System.out.println ("  updating auto-update info ...");
