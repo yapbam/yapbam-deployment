@@ -123,9 +123,8 @@ public class YapbamDeployerPanel extends JPanel {
 			btnNewButton.addActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					try {
-						DeployYapbam yapbamDeployer = new DeployYapbam(getLoginPanel().getLogin().getUser(), getLoginPanel().getLogin().getPassword(), 
-								getSrcFolder().getText().trim(), getToDeploy().getText(), getToRemove().getText(), getBetaCheckBox().isSelected());
+					try (DeployYapbam yapbamDeployer = new DeployYapbam(getLoginPanel().getLogin().getUser(), getLoginPanel().getLogin().getPassword(),
+							getSrcFolder().getText().trim(), getToDeploy().getText(), getToRemove().getText(), getBetaCheckBox().isSelected())) {
 						yapbamDeployer.doIt();
 					} catch (IOException e1) {
 						e1.printStackTrace();

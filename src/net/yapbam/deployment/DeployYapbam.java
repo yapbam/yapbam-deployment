@@ -36,7 +36,7 @@ import com.jcraft.jsch.UserInfo;
  * <br>It verifies that all material is ready to be deployed.
  * @author Jean-Marc-Marc Astesana
  */
-public class DeployYapbam {
+public class DeployYapbam implements AutoCloseable {
 	private static final String RELEASE_ROOT = "sftp://web.sourceforge.net/home/pfs/project/yapbam";
 	private static final String WEB_ROOT = "sftp://web.sourceforge.net/home/project-web/yapbam/htdocs";
 	private boolean onlyBeta; 
@@ -112,12 +112,8 @@ public class DeployYapbam {
 		}
 	}
 	
-	/* (non-Javadoc)
-	 * @see java.lang.Object#finalize()
-	 */
 	@Override
-	protected void finalize() throws Throwable {
-		super.finalize();
+	public void close() throws IOException {
 		System.out.println ("Closing source forge connection");
 		fsManager.close();
 	}
@@ -238,12 +234,12 @@ public class DeployYapbam {
 	
 	private String getVersion(String zipPath) throws IOException {
 		String fname = "jar:zip:file://"+zipPath+"!/App/program.jar!/net/yapbam/update/version.txt";
-		InputStream in = fsManager.resolveFile(fname).getContent().getInputStream();
-		try {
-		    Scanner s = new java.util.Scanner(in).useDelimiter("^.+=");
-		    return s.next();
-		} finally {
-			in.close();
+		try (FileObject fileObject = fsManager.resolveFile(fname)) {
+			try (InputStream in = fileObject.getContent().getInputStream()) {
+			    try (Scanner s = new Scanner(in).useDelimiter("^.+=")) {
+			        return s.next();
+			    }
+			}
 		}
 	}
 
