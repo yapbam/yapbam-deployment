@@ -98,7 +98,7 @@ runs it:
 The `updateInfoInclude.txt` / `updateInfoBetaInclude.txt` files are generated
 by `buildUpdateInfo()` and contain the properties read by Yapbam's
 `UpdateInformation` class (version, URLs, checksums, sizes). See
-[yapbam/UPDATE_PROCESS.md](../yapbam/UPDATE_PROCESS.md) for the full format.
+[UPDATE_PROCESS.md](https://github.com/yapbam/yapbam/blob/master/UPDATE_PROCESS.md) for the full format.
 
 ## Build
 

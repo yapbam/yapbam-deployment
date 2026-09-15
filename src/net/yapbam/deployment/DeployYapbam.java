@@ -6,8 +6,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.net.Proxy;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
@@ -19,8 +17,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Scanner;
 
-import net.yapbam.util.SecureDownloader;
-import net.yapbam.util.SecureDownloader.DownloadInfo;
+import net.yapbam.util.CheckSum;
 
 import org.apache.commons.vfs2.FileObject;
 import org.apache.commons.vfs2.FileSelectInfo;
@@ -131,8 +128,10 @@ public class DeployYapbam implements AutoCloseable {
 	
 	@Override
 	public void close() throws IOException {
-		System.out.println ("Closing source forge connection");
-		fsManager.close();
+		System.out.println ("Closing connections");
+		// Do NOT close the global VFS manager: VFS.getManager() returns a singleton.
+		// Closing it would break all subsequent deployments in the same JVM.
+		// The SFTP connections are cleaned up when the file systems are garbage collected.
 	}
 
 	protected void doIt() throws IOException {
@@ -200,20 +199,17 @@ public class DeployYapbam implements AutoCloseable {
 				out.println ("lastestRelease="+getVersion(src.getZipFile().getAbsolutePath()));
 				out.println ("updateURL=https://sourceforge.net/project/platformdownload.php?group_id=276272");
 				out.println ();
-				SecureDownloader sd = new SecureDownloader(Proxy.NO_PROXY);
 				String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
 				String zipURL = "https://yapbam.sourceforge.net/update"+release+"/yapbam-"+release+".zip?timestamp="+timestamp;
 				out.println ("autoUpdateURL="+zipURL);
-				DownloadInfo info = sd.download(new URL(zipURL), null);
-				out.println ("autoUpdateCHKSUM="+info.getCheckSum());
-				out.println ("autoUpdateSize="+info.getDownloadedSize());
+				out.println ("autoUpdateCHKSUM="+CheckSum.toString(CheckSum.getChecksum(src.getZipFile())));
+				out.println ("autoUpdateSize="+src.getZipFile().length());
 				out.println ();
 		
 				String updaterURL = "https://yapbam.sourceforge.net/update"+release+"/updater.jar?timestamp="+timestamp;
 				out.println ("autoUpdateUpdaterURL="+updaterURL);
-				info = sd.download(new URL(updaterURL), null);
-				out.println ("autoUpdateUpdaterCHKSUM="+info.getCheckSum());
-				out.println ("autoUpdateUpdaterSize="+info.getDownloadedSize());
+				out.println ("autoUpdateUpdaterCHKSUM="+CheckSum.toString(CheckSum.getChecksum(src.getUpdaterFile())));
+				out.println ("autoUpdateUpdaterSize="+src.getUpdaterFile().length());
 				return file;
 			}
 		} catch (IOException e) {
@@ -235,9 +231,21 @@ public class DeployYapbam implements AutoCloseable {
 
 	private void doAutoUpdate(boolean trace) throws FileSystemException {
 		System.out.println ("Setting up auto update");
+		// Verify the web root exists. This also caches its type as FOLDER,
+		// so createFolder on the update subfolder won't try to recreate the
+		// parent (which fails with Permission denied if the user can't write
+		// to the web root's parent directory).
+		FileObject webRootObj = fsManager.resolveFile(webRoot, webOpts);
+		if (!webRootObj.exists()) {
+			throw new FileSystemException("vfs.provider/create-folder.error", webRoot,
+					new IOException("Web root " + webRoot + " does not exist. Please use an absolute path"));
+		}
 		if (trace) System.out.println ("  Create update folder in "+webRoot+" ...");
 		String updateFolder = webRoot+"/update"+this.src.getNewVersion();
-		fsManager.resolveFile(updateFolder, webOpts).createFolder();
+		FileObject updateFolderObj = fsManager.resolveFile(updateFolder, webOpts);
+		if (!updateFolderObj.exists()) {
+			updateFolderObj.createFolder();
+		}
 		if (trace) System.out.println ("  Copying zip ("+this.src.getZipFile()+") to update folder ...");
 		fsManager.resolveFile(updateFolder+"/"+this.src.getZipFile().getName(), webOpts).copyFrom(fsManager.toFileObject(this.src.getZipFile()), getDummySelector());;
 		if (trace) System.out.println ("  update.jar ("+this.src.getUpdaterFile()+") to update folder ...");
