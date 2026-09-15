@@ -11,11 +11,17 @@ hosting via SFTP.
 Run `net.yapbam.deployment.YapbamDeployer` (the main class) and fill in the
 form with:
 
-- The SourceForge credentials (user / password).
+- The **web site access** credentials: the web root URL (the SFTP base URL of
+  the site that hosts the auto-update files) and the web user / password.
+- The **SourceForge** credentials (user / password), used to upload to the
+  SourceForge Files section.
 - The path to the Yapbam source folder (the one containing the built zip, exe,
-  and `updater.jar`).
+  release notes, and the `updater.version` file).
 - The new version number and the previous version number.
 - Whether to deploy to the **beta** channel only.
+- In beta mode only, an optional **updater jar** path. If left empty, the
+  updater is downloaded from Maven Central using the version read from
+  `updater.version`.
 
 ## What gets deployed
 
@@ -65,19 +71,29 @@ channel or the public download pages.
 
 ## How it works
 
-`DeployYapbam.doIt()` is the entry point:
+The Start button in `YapbamDeployerPanel` first prepares the deployment, then
+runs it:
 
-1. `doAutoUpdate()` — always executed. Creates the `updateXXX/` folder, copies
-   the zip and updater.jar, generates and uploads the `updateInfoInclude.txt`
-   (release channel, unless beta-only) and `updateInfoBetaInclude.txt` (beta
-   channel, always). Also deletes the previous version's update folder.
-2. `doRelease()` — skipped in beta mode. Copies the zip and exe to the
-   SourceForge Files section and to `directDownload/`.
-3. `doDoc()` — skipped in beta mode. Copies the release notes (English and
-   French).
-4. `doPad()` — skipped in beta mode. Generates and uploads the PAD file
-   (`pad_file.xml`, an XML template with version, date, and file size
-   placeholders).
+1. `DeploymentPreparation.prepare()` — copies the build artifacts (zip, exe,
+   release notes) from the source folder into a temporary folder, and resolves
+   the updater jar: if a local updater jar was provided (beta mode only) it is
+   copied as `updater.jar`, otherwise the updater is downloaded from Maven
+   Central using the version read from the `updater.version` file. The
+   resulting temp folder is then passed to `DeployYapbam`.
+2. `DeployYapbam.doIt()` runs the actual deployment:
+
+   1. `doAutoUpdate()` — always executed. Creates the `updateXXX/` folder,
+      copies the zip and updater.jar, generates and uploads the
+      `updateInfoInclude.txt` (release channel, unless beta-only) and
+      `updateInfoBetaInclude.txt` (beta channel, always). Also deletes the
+      previous version's update folder.
+   2. `doRelease()` — skipped in beta mode. Copies the zip and exe to the
+      SourceForge Files section and to `directDownload/`.
+   3. `doDoc()` — skipped in beta mode. Copies the release notes (English and
+      French).
+   4. `doPad()` — skipped in beta mode. Generates and uploads the PAD file
+      (`pad_file.xml`, an XML template with version, date, and file size
+      placeholders).
 
 The `updateInfoInclude.txt` / `updateInfoBetaInclude.txt` files are generated
 by `buildUpdateInfo()` and contain the properties read by Yapbam's
