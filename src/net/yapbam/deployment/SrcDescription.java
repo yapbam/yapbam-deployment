@@ -1,6 +1,10 @@
 package net.yapbam.deployment;
+
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 public class SrcDescription {
 	private File updaterFile;
@@ -11,7 +15,6 @@ public class SrcDescription {
 	private String newVersion;
 	private String oldVersion;
 	private Date releaseDate;
-	private File padFile;
 
 	public SrcDescription(File folder, String newVersion, Date releaseDate, String oldVersion) {
 		this.updaterFile = new File (folder, "updater.jar");
@@ -19,7 +22,6 @@ public class SrcDescription {
 		this.exeFile = new File (folder, "yapbam-"+newVersion+".exe");
 		this.relNotesFile = new File (folder, "src/localization/relnotes.txt");
 		this.relNotesFrFile = new File (folder, "src/localization/fr/relnotes.txt");
-		this.padFile = new File ("pad_file.xml");
 		this.newVersion = newVersion;
 		this.oldVersion = oldVersion;
 		this.releaseDate = releaseDate;
@@ -56,7 +58,7 @@ public class SrcDescription {
 	public String getNewVersion() {
 		return this.newVersion;
 	}
-	
+
 	/**
 	 * @return the updaterFile
 	 */
@@ -78,10 +80,10 @@ public class SrcDescription {
 		return releaseDate;
 	}
 
-	/**
-	 * @return the padFile
+	/** Gets all the files referenced by this description, except the updater file.
+	 * @return An unmodifiable list of files (zip, exe, release notes).
 	 */
-	public File getPadFile() {
-		return padFile;
+	public List<File> getFiles() {
+		return Collections.unmodifiableList(Arrays.asList(zipFile, exeFile, relNotesFile, relNotesFrFile));
 	}
 }

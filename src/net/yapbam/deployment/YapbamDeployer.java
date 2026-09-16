@@ -39,6 +39,7 @@ public class YapbamDeployer extends Application {
 	@Override
 	protected boolean onStart() {
 		getJFrame().pack();
+		getJFrame().setResizable(false);
 		return super.onStart();
 	}
 
