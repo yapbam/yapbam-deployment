@@ -24,10 +24,10 @@ import org.apache.commons.vfs2.FileSelectInfo;
 import org.apache.commons.vfs2.FileSelector;
 import org.apache.commons.vfs2.FileSystemException;
 import org.apache.commons.vfs2.FileSystemOptions;
-import org.apache.commons.vfs2.VFS;
 import org.apache.commons.vfs2.auth.StaticUserAuthenticator;
 import org.apache.commons.vfs2.impl.DefaultFileSystemConfigBuilder;
 import org.apache.commons.vfs2.impl.DefaultFileSystemManager;
+import org.apache.commons.vfs2.impl.StandardFileSystemManager;
 import org.apache.commons.vfs2.provider.sftp.SftpFileSystemConfigBuilder;
 
 import com.jcraft.jsch.UIKeyboardInteractive;
@@ -52,18 +52,42 @@ public class DeployYapbam implements AutoCloseable {
 	private SrcDescription src;
 	private FileSelector dummySelector;
 	
-	DeployYapbam(String sfUser, String sfPassword, String webRoot, String webUser, String webPassword, String srcPath, String newVersion, String oldVersion, boolean onlyBeta) throws FileSystemException {
+	DeployYapbam(String sfUser, String sfPassword, String webRoot, String webUser, String webPassword, String srcPath, String newVersion, String oldVersion, boolean onlyBeta) {
 		this.src = new SrcDescription(new File(srcPath), newVersion, new Date(), oldVersion);
 		this.onlyBeta = onlyBeta;
 		this.webRoot = webRoot;
-		fsManager = (DefaultFileSystemManager) VFS.getManager();
 		sfOpts = createSftpOpts(sfUser, sfPassword);
 		webOpts = createSftpOpts(webUser, webPassword);
 	}
 
-	private static FileSystemOptions createSftpOpts(String user, String password) throws FileSystemException {
+	/** Lazily creates the file system manager on first use.
+	 * <br>We use our own manager (not the VFS.getManager() singleton) so close() can
+	 * close this deployment's connections without breaking subsequent deployments.
+	 * @return The file system manager.
+	 * @throws FileSystemException if the manager cannot be initialized.
+	 */
+	private DefaultFileSystemManager getFsManager() throws FileSystemException {
+		if (fsManager == null) {
+			StandardFileSystemManager manager = new StandardFileSystemManager();
+			try {
+				manager.init();
+			} catch (FileSystemException e) {
+				manager.close();
+				throw e;
+			}
+			fsManager = manager;
+		}
+		return fsManager;
+	}
+
+	private static FileSystemOptions createSftpOpts(String user, String password) {
 		FileSystemOptions opts = new FileSystemOptions();
-		SftpFileSystemConfigBuilder.getInstance().setStrictHostKeyChecking(opts, "no");
+		try {
+			SftpFileSystemConfigBuilder.getInstance().setStrictHostKeyChecking(opts, "no");
+		} catch (FileSystemException e) {
+			// "no" is a valid constant, this can't happen
+			throw new IllegalStateException(e);
+		}
 		SftpFileSystemConfigBuilder.getInstance().setUserDirIsRoot(opts, false); // Use absolute paths
 		StaticUserAuthenticator auth = new StaticUserAuthenticator(null, user, password);
 		DefaultFileSystemConfigBuilder.getInstance().setUserAuthenticator(opts, auth);
@@ -128,14 +152,15 @@ public class DeployYapbam implements AutoCloseable {
 	
 	@Override
 	public void close() throws IOException {
+		if (fsManager != null) {
 		System.out.println ("Closing connections");
-		// Do NOT close the global VFS manager: VFS.getManager() returns a singleton.
-		// Closing it would break all subsequent deployments in the same JVM.
-		// The SFTP connections are cleaned up when the file systems are garbage collected.
+			fsManager.close();
+		}
 	}
 
 	protected void doIt() throws IOException {
 		boolean trace = true;
+		checkConnections();
 		doAutoUpdate(trace);
 		if (!onlyBeta) {
 			doRelease(trace);
@@ -145,11 +170,35 @@ public class DeployYapbam implements AutoCloseable {
 		System.out.println ("Finished :-)");
 	}
 	
+	/** Validates that the required connections can be established before any transfer.
+	 * <br>This fails fast on wrong credentials or unreachable hosts, avoiding partial deployments.
+	 * @throws FileSystemException if a connection fails or a root folder does not exist.
+	 */
+	private void checkConnections() throws FileSystemException {
+		// exists() forces an SSH connect + authentication and a stat on the remote folder.
+		// It also caches the type of the web root as FOLDER, so createFolder on the update
+		// subfolder won't try to recreate the parent (which fails with Permission denied
+		// if the user can't write to the web root's parent directory).
+		FileObject webRootObj = getFsManager().resolveFile(webRoot, webOpts);
+		if (!webRootObj.exists()) {
+			throw new FileSystemException("vfs.provider/create-folder.error", webRoot,
+					new IOException("Web root " + webRoot + " does not exist. Please use an absolute path"));
+		}
+		if (!onlyBeta) {
+			// Verify the SourceForge connection and release root before deploying anything.
+			FileObject releaseRoot = getFsManager().resolveFile(RELEASE_ROOT, sfOpts);
+			if (!releaseRoot.exists()) {
+				throw new FileSystemException("vfs.provider/create-folder.error", RELEASE_ROOT,
+						new IOException("SourceForge release root does not exist: " + RELEASE_ROOT));
+			}
+		}
+	}
+	
 	private void doPad(boolean trace) throws FileSystemException {
 		System.out.println ("Updating pad file");
 		File f = buildPad();
 		if (trace) System.out.println ("  Uploading pad file ...");
-		fsManager.resolveFile(webRoot+"/pad_file.xml", webOpts).copyFrom(fsManager.toFileObject(f), getDummySelector());
+		getFsManager().resolveFile(webRoot+"/pad_file.xml", webOpts).copyFrom(getFsManager().toFileObject(f), getDummySelector());
 	}
 
 	private File buildPad() throws FileSystemException {
@@ -219,7 +268,7 @@ public class DeployYapbam implements AutoCloseable {
 	
 	private String getVersion(String zipPath) throws IOException {
 		String fname = "jar:zip:file://"+zipPath+"!/App/program.jar!/net/yapbam/update/version.txt";
-		try (FileObject fileObject = fsManager.resolveFile(fname)) {
+		try (FileObject fileObject = getFsManager().resolveFile(fname)) {
 			try (InputStream in = fileObject.getContent().getInputStream()) {
 			    try (Scanner s = new Scanner(in).useDelimiter("^.+=")) {
 			        return s.next();
@@ -231,35 +280,26 @@ public class DeployYapbam implements AutoCloseable {
 
 	private void doAutoUpdate(boolean trace) throws FileSystemException {
 		System.out.println ("Setting up auto update");
-		// Verify the web root exists. This also caches its type as FOLDER,
-		// so createFolder on the update subfolder won't try to recreate the
-		// parent (which fails with Permission denied if the user can't write
-		// to the web root's parent directory).
-		FileObject webRootObj = fsManager.resolveFile(webRoot, webOpts);
-		if (!webRootObj.exists()) {
-			throw new FileSystemException("vfs.provider/create-folder.error", webRoot,
-					new IOException("Web root " + webRoot + " does not exist. Please use an absolute path"));
-		}
 		if (trace) System.out.println ("  Create update folder in "+webRoot+" ...");
 		String updateFolder = webRoot+"/update"+this.src.getNewVersion();
-		FileObject updateFolderObj = fsManager.resolveFile(updateFolder, webOpts);
+		FileObject updateFolderObj = getFsManager().resolveFile(updateFolder, webOpts);
 		if (!updateFolderObj.exists()) {
 			updateFolderObj.createFolder();
 		}
 		if (trace) System.out.println ("  Copying zip ("+this.src.getZipFile()+") to update folder ...");
-		fsManager.resolveFile(updateFolder+"/"+this.src.getZipFile().getName(), webOpts).copyFrom(fsManager.toFileObject(this.src.getZipFile()), getDummySelector());;
+		getFsManager().resolveFile(updateFolder+"/"+this.src.getZipFile().getName(), webOpts).copyFrom(getFsManager().toFileObject(this.src.getZipFile()), getDummySelector());;
 		if (trace) System.out.println ("  update.jar ("+this.src.getUpdaterFile()+") to update folder ...");
-		fsManager.resolveFile(updateFolder+"/"+this.src.getUpdaterFile().getName(), webOpts).copyFrom(fsManager.toFileObject(this.src.getUpdaterFile()), getDummySelector());
+		getFsManager().resolveFile(updateFolder+"/"+this.src.getUpdaterFile().getName(), webOpts).copyFrom(getFsManager().toFileObject(this.src.getUpdaterFile()), getDummySelector());
 		
 		if (trace) System.out.println ("  updating auto-update info ...");
 		File file = buildUpdateInfo();
 		if (!onlyBeta) {
-			fsManager.resolveFile(webRoot+"/updateInfoInclude.txt", webOpts).copyFrom(fsManager.toFileObject(file), getDummySelector());
+			getFsManager().resolveFile(webRoot+"/updateInfoInclude.txt", webOpts).copyFrom(getFsManager().toFileObject(file), getDummySelector());
 		}
-		fsManager.resolveFile(webRoot+"/updateInfoBetaInclude.txt", webOpts).copyFrom(fsManager.toFileObject(file), getDummySelector());
+		getFsManager().resolveFile(webRoot+"/updateInfoBetaInclude.txt", webOpts).copyFrom(getFsManager().toFileObject(file), getDummySelector());
 		
 		// Delete old update (if it exists)
-		FileObject oldUpdateFolder = fsManager.resolveFile(webRoot+"/update"+this.src.getOldVersion(), webOpts);
+		FileObject oldUpdateFolder = getFsManager().resolveFile(webRoot+"/update"+this.src.getOldVersion(), webOpts);
 		if (oldUpdateFolder.exists()) {
 			if (trace) System.out.println ("  Delete obsolete update folder in "+webRoot+" ...");
 			oldUpdateFolder.delete(getDummySelector());
@@ -269,20 +309,20 @@ public class DeployYapbam implements AutoCloseable {
 	private void doRelease(boolean trace) throws FileSystemException {
 		System.out.println ("Posting release");
 		if (trace) System.out.println ("  Copying zip to sourceforge ...");
-		fsManager.resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getZipFile().getName(), sfOpts).copyFrom(fsManager.toFileObject(this.src.getZipFile()), getDummySelector());
+		getFsManager().resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getZipFile().getName(), sfOpts).copyFrom(getFsManager().toFileObject(this.src.getZipFile()), getDummySelector());
 		if (trace) System.out.println ("  Copying exe to sourceforge ...");
-		fsManager.resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getExeFile().getName(), sfOpts).copyFrom(fsManager.toFileObject(this.src.getExeFile()), getDummySelector());
+		getFsManager().resolveFile(RELEASE_ROOT+"/yapbam/"+this.src.getExeFile().getName(), sfOpts).copyFrom(getFsManager().toFileObject(this.src.getExeFile()), getDummySelector());
 		if (trace) System.out.println ("  Copying exe to "+webRoot+"/directDownload ...");
-		fsManager.resolveFile(webRoot+"/directDownload/"+this.src.getExeFile().getName(), webOpts).copyFrom(fsManager.toFileObject(this.src.getExeFile()), getDummySelector());
+		getFsManager().resolveFile(webRoot+"/directDownload/"+this.src.getExeFile().getName(), webOpts).copyFrom(getFsManager().toFileObject(this.src.getExeFile()), getDummySelector());
 	}
 
 	private void doDoc(boolean trace) throws FileSystemException {
 		System.out.println ("Copying release notes ...");
 		// Relnotes
 		File file = src.getRelNotesFile();
-		fsManager.resolveFile(webRoot+"/en/doc/"+file.getName(), webOpts).copyFrom(fsManager.toFileObject(file), getDummySelector());
+		getFsManager().resolveFile(webRoot+"/en/doc/"+file.getName(), webOpts).copyFrom(getFsManager().toFileObject(file), getDummySelector());
 		file = src.getRelNotesFrFile();
-		fsManager.resolveFile(webRoot+"/fr/doc/"+file.getName(), webOpts).copyFrom(fsManager.toFileObject(file), getDummySelector());
+		getFsManager().resolveFile(webRoot+"/fr/doc/"+file.getName(), webOpts).copyFrom(getFsManager().toFileObject(file), getDummySelector());
 	}
 
 	private FileSelector getDummySelector() {
